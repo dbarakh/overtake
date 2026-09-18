@@ -584,7 +584,7 @@ const SQUEAL_B64 = 'SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYyLjMuMTAwAAAAAAAAAAAAAAD/
   PROG.stars = PROG.stars || {}; PROG.coins = PROG.coins || 0; PROG.owned = PROG.owned || ['lada']; PROG.car = PROG.car || 'lada';
   const saveProg = () => { try { localStorage.setItem('ot_prog', JSON.stringify(PROG)); } catch(e) {} };
   const stageOpen = st => true;   /* stages open by stars alone: the car a stage is built for is handed over when the player first gets there */
-  const DEV = /[?&]dev=1/.test(location.search);   /* levels open one by one; add ?dev=1 to the address to open them all for testing */
+  const DEV = !/[?&]dev=0/.test(location.search);   /* testing phase: every level is open; ?dev=0 shows the real one-by-one unlocking. Before release turn this back to open-by-stars */
   const unlocked = n => DEV || ((n === 1 || (PROG.stars[n - 1] || 0) > 0) && stageOpen(LEVELS[n - 1].stage));
 
   // ---- scene ----
