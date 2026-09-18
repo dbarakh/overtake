@@ -583,7 +583,7 @@ const SQUEAL_B64 = 'SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYyLjMuMTAwAAAAAAAAAAAAAAD/
   const PROG = (() => { try { return JSON.parse(localStorage.getItem('ot_prog') || '{}'); } catch(e) { return {}; } })();
   PROG.stars = PROG.stars || {}; PROG.coins = PROG.coins || 0; PROG.owned = PROG.owned || ['lada']; PROG.car = PROG.car || 'lada';
   const saveProg = () => { try { localStorage.setItem('ot_prog', JSON.stringify(PROG)); } catch(e) {} };
-  const stageOpen = st => { const S = STAGES[st - 1]; return !S.car || PROG.owned.includes(S.car); };
+  const stageOpen = st => true;   /* stages open by stars alone: the car a stage is built for is handed over when the player first gets there */
   const DEV = /[?&]dev=1/.test(location.search);   /* levels open one by one; add ?dev=1 to the address to open them all for testing */
   const unlocked = n => DEV || ((n === 1 || (PROG.stars[n - 1] || 0) > 0) && stageOpen(LEVELS[n - 1].stage));
 
@@ -804,12 +804,12 @@ const SQUEAL_B64 = 'SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYyLjMuMTAwAAAAAAAAAAAAAAD/
       box.appendChild(b); }
     $('garage').classList.add('on'); }
   $('garageBtn').addEventListener('click', showGarage); $('garageBack').addEventListener('click', () => { $('garage').classList.remove('on'); showMap(); });
-  function showPre(n){ P.level = n; LV = LEVELS[n - 1]; $('map').classList.remove('on'); $('done').classList.remove('on'); $('preNum').textContent = STAGES[LV.stage - 1].name + ' · уровень ' + n + (LV.night ? ' · ночь' : '') + ' · ' + carById(PROG.car).name; $('preTitle').textContent = LV.name; $('preDesc').textContent = LV.desc;
+  function showPre(n){ P.level = n; LV = LEVELS[n - 1]; const gift = STAGES[LV.stage - 1].car; let gifted = false; if (gift && !PROG.owned.includes(gift)) { PROG.owned.push(gift); PROG.car = gift; saveProg(); gifted = true; } $('map').classList.remove('on'); $('done').classList.remove('on'); $('preNum').textContent = STAGES[LV.stage - 1].name + ' · уровень ' + n + (LV.night ? ' · ночь' : '') + ' · ' + carById(PROG.car).name; $('preTitle').textContent = LV.name; $('preDesc').textContent = (gifted ? carById(gift).name + ' теперь твой: в гараже уже стоит, дальше едешь на нём. ' : '') + LV.desc;
     $('pre').classList.add('on'); loadLevel(n); $('preThr').innerHTML = '<span>★★★ <b>' + LV.stars[0] + ' с</b></span><span>★★ <b>' + LV.stars[1] + ' с</b></span><span>★ <b>' + LV.stars[2] + ' с</b></span><span>обгонов <b>от ' + LV.need + '</b></span>'; }
   function loadLevel(n){ P.level = n; LV = LEVELS[n - 1]; seed = 1000 + n*77; if (!player || player.userData.carId !== PROG.car) { setCar(PROG.car); player.userData.carId = PROG.car; } buildTrack(LV.track); setNight(!!LV.night, !!LV.winter, !!LV.south, !!LV.sunset, !!LV.steppe); clearCars(); for (const d of DUST) d.sp.visible = false; if (!LV.traffic) LV.traffic = genTraffic(n, LV);
     if (LV.tunnels && LV.tunnelFix) { const vP = MAXV*.85; for (const [a, b] of LV.tunnels) { const tA = a/vP; for (const t of LV.traffic) { if (t.d > 0) continue; const v = kmh(t.v); const pos = t.s - v*tA; if (pos > a - 90 && pos < b + 160) t.s += (b + 160) - pos + 40; } } }   /* nobody comes out of the mouth as we go in: whoever would has been held back, and is met inside instead */
     for (const t of LV.traffic) spawn(t.k, t.d, t.s, kmh(t.v));
-    { const vp = MAXV*.8, T = LV.len/vp; const reach = cars.filter(c => c.dir > 0 && !c.still && c.s > 20 && c.s + c.v0*T < LV.len - 30).length; const p = Math.max(0, (n - 6)/(LEVELS.length - 6)); LV.need = Math.max(2, Math.min(LV.jam ? 6 : 8, Math.max(Math.ceil(reach*.4), 2 + Math.floor(p*3)), Math.max(2, reach - 1))); }   /* how many cars must be overtaken: two fifths of those a decent drive can catch before the flag */
+    { const vp = MAXV*.8, T = LV.len/vp; const reach = cars.filter(c => c.dir > 0 && !c.still && c.s > 20 && c.s + c.v0*T < LV.len - 30).length; const p = Math.max(0, (n - 6)/(LEVELS.length - 6)); LV.need = Math.max(2, Math.min(LV.jam ? 4 : 5, Math.max(Math.ceil(reach*.25), 2 + Math.floor(p*2)), Math.max(2, reach - 2))); }   /* a quarter of what can be caught, two at the start, up to five by the end: enough that nobody finishes behind a bumper */   /* how many cars must be overtaken */
     Object.assign(P, {s:0, v:MAXV*.5, lat:OWN, latV:0, hold:false, head:0, pitch:0, coins:0, passed:0, risky:0, over:false, done:false, lvlT:0, camLat:OWN*.55, prevV:0, camYaw:0}); for (const c of cars) placeCar(c); step(0); hud(); }
   function play(){ $('pre').classList.remove('on'); $('done').classList.remove('on'); $('over').classList.remove('on'); P.playing = true; P.paused = false; toast('Уровень ' + P.level); }
   function retry(){ loadLevel(P.level); play(); }
